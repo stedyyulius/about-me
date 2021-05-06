@@ -29,8 +29,29 @@ const Projects = () => {
         const newScreenshots: projectTypes = {};
 
         for (const project of projectUrls) {
-            const base64 = await getWebsiteScreenshot(project.url);
-            newScreenshots[project.name] = base64;
+
+            const cachedBase64 = localStorage.getItem(project.name);
+
+            if (cachedBase64) {
+                const { expiry, base64 } = JSON.parse(cachedBase64);
+
+                const expiredDate = new Date(expiry);
+
+                if (new Date().getTime() > expiredDate.setDate(expiredDate.getDate() + 30)) { // if cached project base64 greater than 30 days, it considered expired
+                    localStorage.remove(project.name)
+                } else {
+                    newScreenshots[project.name] = base64;
+                }
+            } else {
+                const base64 = await getWebsiteScreenshot(project.url);
+                
+                newScreenshots[project.name] = base64;
+
+                localStorage.setItem(project.name, JSON.stringify({
+                    expiry: new Date(),
+                    base64
+                }))
+            }
         }
 
         setScreenshots({ ...newScreenshots });
